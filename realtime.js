@@ -1,4 +1,3 @@
-
 var video;
 var poseNet;
 var pose;
@@ -8,6 +7,13 @@ var videoWidth = 320;
 var videoHeight = 240;
 var snapshots = []; // 캡쳐된 사진을 저장하기 위한 리스트
 var idx = 0;
+var img;
+let retake = true;
+var flag = true;
+
+const scoreCount = 13;
+var direction = 4;
+
 
 function setup() {
 
@@ -24,24 +30,61 @@ function setup() {
   };
   video = createCapture(constraints);
 
+  
   // Create Button
-  button = createButton('캡쳐 하기');
+  button = createButton('Capture!');
   button.mousePressed(takesnap);
-
+  useBtn = createButton('Use this picture');
+  useBtn.mousePressed(classify);
+  useBtn.hide();
   // Connect to poseNet
   poseNet = ml5.poseNet(video, modelLoaded);
   poseNet.on('pose', gotPoses);
   // video.hide(); // 원본 비디오는 숨김. 
 }
 
+function classify() {
+  flag = false; // false시 Total Score가 정지됨.
+
+  select('#status').html('Complete Capture!');
+
+  let degree = turtleModel(pose.keypoints);
+
+  if(degree < 60){
+    // console.log("You are Turtle!! \n" + " Your Turtle Degree : " + parseInt(degree));
+    if(direction == 4) {
+      select('#score').html("Right Side"+ "<br>" + "You are Turtle!! " + "<br>" + " Your Turtle Degree : " + parseInt(degree));
+    }else
+    {
+      select('#score').html("Left Side"+ "<br>" + "You are Turtle!! " + "<br>" + " Your Turtle Degree : " + parseInt(degree));
+    }
+    }
+  else{
+    if(direction == 4) { 
+      select('#score').html("Right Side"+ "<br>" +"You are not turtle!!" + "<br>" + "Your Turtle Degree :" + parseInt(degree));
+  }else {
+    select('#score').html("Left Side"+ "<br>" + "You are not turtle!!" + "<br>" + "Your Turtle Degree :" + parseInt(degree));
+  }
+}
+  }
+
 function takesnap(){
   // 카메라가 켜져있을 때에만 작동하도록 함
   if (video.loadedmetadata) {
-    var img = video.get(0,0, videoWidth, videoHeight);
+    img = video.get(0,0, videoWidth, videoHeight);
     snapshots.push(img); // 캡쳐한 이미지를 배열에 push
   }
-  
-  
+  if (retake) {
+    button.html('Recapture');
+    useBtn.show();
+    snapshots = [];
+  } 
+  else {
+    button.html('snap!');
+    // useBtn.hide();
+    
+  }
+  retake = !retake;
 }
 
 function gotPoses(poses) {
@@ -59,37 +102,21 @@ function modelLoaded() {
 
 function draw() {
   image(video, 0, 0,videoWidth, videoHeight); // 실시간 자세 추적
-  // background(200);
   
   // 캡쳐된 이미지가 있다면
   if (snapshots.length > 0) {
     image(snapshots[idx], 0, 0, videoWidth, videoHeight);
-
-    // 30 프레임 주기로 캡쳐된 사진들을 순회함.
-    if (frameCount%30 == 0) idx += 1;
-
-    // 만약 idx가 배열의 크기와 같아진다면 다시 0으로 초기화
-    if (idx == snapshots.length) idx = 0;
   }
 
   if (pose) {
-    // let eyeR = pose.rightEye;
-    // let eyeL = pose.leftEye;
-    
-    // let d = dist(eyeR.x, eyeR.y, eyeL.x, eyeL.y); // d값은 캠과의 거리를 계산함.
-    // fill(255, 0, 0); // R , G, B
-    // ellipse(pose.nose.x, pose.nose.y, d); // 가까울 수록 빨간 점이 크게 그려짐.
-    
-    // fill(0, 0, 255);
-    // ellipse(pose.rightWrist.x, pose.rightWrist.y, 32);
-    // ellipse(pose.leftWrist.x, pose.leftWrist.y, 32);
-
-    // 상반신까지만 점을 출력하기 위해서 7로 설정.
-    for (let i = 0; i < 7; i++) { 
+    //keypoint 3 ~ 6까지의 점만 출력.
+    for (let i = 3; i < 7; i++) { 
       let x = pose.keypoints[i].position.x;
       let y = pose.keypoints[i].position.y;
       fill(0, 255, 0); // 점의 색깔
-      ellipse(x, y, 10, 10); // 점의 크기
+      ellipse(x, y, 5, 5); // 점의 크기
+      if (flag)  select('#score').html("Total Score : " + pose.score.toFixed(5) * 100);
+      // console.log(pose);
     }
 
     for (let i = 0; i < skeleton.length; i++) {
@@ -100,4 +127,53 @@ function draw() {
       line(a.position.x, a.position.y, b.position.x, b.position.y);
     }
   }
+}
+
+function turtleModel(keypoints){
+   
+  var count = 0;
+  var valueX = 0;
+  var valueY = 0;
+
+  for (let i = 0; i < keypoints.length; i++) {
+      if (keypoints[i].score < 0.5) count++;
+      if (count > scoreCount) return 0;
+  }
+   
+  if(keypoints[4].score > keypoints[3].score){
+      direction = 4;
+      valueX = 4;
+      valueY = 6;
+  }
+  else {
+      direction = 3;
+      valueX = 3;
+      valueY = 5;
+  }
+  
+  var earx = parseInt(keypoints[valueX].position.x) 
+var eary = parseInt(keypoints[valueY].position.y) 
+var shox = parseInt(keypoints[valueY].position.x) 
+var shoy = parseInt(keypoints[valueX].position.y) 
+
+console.log("This is ear's position!! \n" + "x :"
+ + earx+ " y :" + eary);
+console.log("This is shoulder's position!! \n" + "x :" 
++ shox + " y :" + shoy);
+
+// ear and shouler's angle function
+var angleDeg =  (ey,sy,ex,sx) => {
+    if(valueX == 4){
+   return  Math.atan2(ey - sy, ex - sx) * 180 / Math.PI;
+    }
+    else{
+     let deg =  Math.atan2(ey - sy, ex - sx) * 180 / Math.PI;
+     deg = 90 - (deg - 90);
+      return deg;
+    }
+  }
+console.log("Degree : "+ parseInt(angleDeg(eary,shoy,earx,shox)));
+console.log(keypoints)
+return angleDeg(eary,shoy,earx,shox);
+  
 }
