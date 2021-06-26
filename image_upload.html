@@ -1,0 +1,57 @@
+<html>
+    <head>
+        <!-- Load TensorFlow.js -->
+        <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+        <!-- Load Posenet -->
+        <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/posenet"></script>
+        <style>
+            /* 이미지에 캔버스를 겹쳐서 그릴때는 아래 주석 해제 */
+            canvas {
+                position: absolute;
+            }
+
+            img {
+                position: absolute;
+            }
+        </style>
+    </head>
+    <body>
+        <input id="input" type="file" name="file" />
+        <img id="img">
+        <canvas id="canvas"></canvas>
+
+    </body>
+
+    <script>
+        var flipHorizontal = false;
+        var img = document.getElementById('img');
+        var input = document.getElementById('input');
+        var canvas = document.getElementById("canvas");
+        var context = canvas.getContext("2d");
+
+        img.src = "images/test.jpg"; // 초기 이미지 설정
+        
+        input.addEventListener('change', (e) => {
+            img.src = URL.createObjectURL(e.target.files[0]);
+        }, false);
+
+        img.onload = function () {
+            //Do something
+            posenet.load().then(function (net) {
+                const pose = net.estimateSinglePose(img, {
+                    flipHorizontal: false
+                });
+                return pose;
+            }).then(function (pose) {
+                console.log(pose);
+                console.log(img.width, img.hight);
+                canvas.width = img.width;
+                canvas.height = img.height;
+                drawKeypoints(pose.keypoints, 0.6, context); // 신뢰도 점수가 60% 이상인 것만 추출
+                drawSkeleton(pose.keypoints, 0.6, context);
+            })
+        };
+    </script>
+    <script src="posenet.js"></script>
+
+</html>
