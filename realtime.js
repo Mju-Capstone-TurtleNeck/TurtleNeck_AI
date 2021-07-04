@@ -10,6 +10,7 @@ var idx = 0;
 var img;
 let retake = true;
 var flag = true;
+var imgKeypoint;
 
 const scoreCount = 13;
 var direction = 4;
@@ -46,9 +47,10 @@ function setup() {
 function classify() {
   flag = false; // false시 Total Score가 정지됨.
 
+  
   select('#status').html('Complete Capture!');
 
-  let degree = turtleModel(pose.keypoints);
+  let degree = turtleModel(imgKeypoint);
 
   if(degree < 60){
     // console.log("You are Turtle!! \n" + " Your Turtle Degree : " + parseInt(degree));
@@ -73,15 +75,18 @@ function takesnap(){
   if (video.loadedmetadata) {
     img = video.get(0,0, videoWidth, videoHeight);
     snapshots.push(img); // 캡쳐한 이미지를 배열에 push
+    // console.log(img);
   }
   if (retake) {
     button.html('Recapture');
+    imgKeypoint = pose.keypoints;
     useBtn.show();
     snapshots = [];
   } 
   else {
     button.html('snap!');
     // useBtn.hide();
+    imgKeypoint = pose.keypoints;
     
   }
   retake = !retake;
