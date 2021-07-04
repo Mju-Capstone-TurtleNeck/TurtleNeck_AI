@@ -83,7 +83,7 @@ function drawKeypoints(keypoints, minConfidence, ctx, scale = 1) {
             keyDrawPoint(ctx, y * scale, x * scale, 3, keyColor);
         }
         else   {
-            drawPoint(ctx, y * scale, x * scale, 3, color);
+//             drawPoint(ctx, y * scale, x * scale, 3, color);
         }
     }
 }
