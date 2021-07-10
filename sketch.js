@@ -49,11 +49,14 @@ function setup() {
   reBtn = createButton('Pose Reset!!');
   reBtn.mousePressed(reset);
   useBtn.hide();
+
   // Connect to poseNet
   poseNet = ml5.poseNet(video, modelLoaded);
   poseNet.on('pose', gotPoses);
+
   // Connect to Faceapi
   const faceOptions = { withLandmarks: true, withExpressions: false, withDescriptors: false };
+
   // 충돌방지용 딜레이
   setTimeout(() =>{faceapi = ml5.faceApi(video, faceOptions, faceReady)},3000);
   // video.hide(); // 원본 비디오는 숨김. 
@@ -62,10 +65,9 @@ function setup() {
 function reset(){
   middleDegree = 0;
   flag = 0;
-
-  console.log('Pose Reset');
   select('#status').html('정자세로 촬영해주세요.');
 }
+
 // 'Use this Picture' 클릭 시 호출.
 function classify() {
   
@@ -85,20 +87,18 @@ function classify() {
       console.log('75')
     }
   } 
-  // console.log(middledegree);
-  // console.log(degree);
 
   // 첫 번째 촬영 정면 / 측면 구분 후 츨력
   if(flag == 0 && degFlag == 1){
-      flag ++;
-      console.log("first point");
-    select('#score').html("Your Front Straight Turtle Degree  :" + middleDegree);
-  }
-  else if(flag == 0 && degFlag == 0){
     flag ++;
     console.log("first point");
-  select('#score').html("Your Side Straight Turtle Degree  :" + middleDegree);
-}
+    select('#score').html("Your Front Straight Turtle Degree  :" + middleDegree);
+  } else if (flag == 0 && degFlag == 0){
+    flag ++;
+    console.log("first point");
+    select('#score').html("Your Side Straight Turtle Degree  :" + middleDegree);
+  }
+  
   //  두 번째 촬영 이후부터 정면/측면 구분 후 출력 
   if (middleDegree - degree > 5 && flag > 0 && degFlag == 1)
   {
@@ -244,63 +244,46 @@ function FrontTurtleModel(keypoints){
 
 
 function SideTurtleModel(keypoints){
-   
 
-    console.log("This is SideTurtle");
+  var count = 0;
+  var valueX = 0;
+  var valueY = 0;
 
-    var count = 0;
-    var valueX = 0;
-    var valueY = 0;
-  
-    // for (let i = 0; i < keypoints.length; i++) {
-    //     if (keypoints[i].score < 0.5) count++;
-    //     if (count > scoreCount) return 0;
-    // }
-    // Right 
-    if(keypoints[4].score > keypoints[3].score){
-        direction = 4;
-        valueX = 4;
-        valueY = 6;
-        console.log("Right Turtle Model");
-    }
-    // Left
-    else {
-        direction = 3;
-        valueX = 3;
-        valueY = 5;
-        console.log("Right Turtle Model");
-    }
+  // Right 
+  if(keypoints[4].score > keypoints[3].score){
+    direction = 4;
+    valueX = 4;
+    valueY = 6;
+    console.log("Right Turtle Model");
+  } else { // Left
+    direction = 3;
+    valueX = 3;
+    valueY = 5;
+    console.log("Left Turtle Model");
+  }
     
   var earx = parseInt(keypoints[valueX].position.x) 
   var eary = parseInt(keypoints[valueY].position.y) 
   var shox = parseInt(keypoints[valueY].position.x) 
   var shoy = parseInt(keypoints[valueX].position.y) 
   
-  console.log("This is ear's position!! \n" + "x :"
-   + earx+ " y :" + eary);
-  console.log("This is shoulder's position!! \n" + "x :" 
-  + shox + " y :" + shoy);
-  
   // ear and shouler's angle function
   var angleDeg =  (ey,sy,ex,sx) => {
-      if(valueX == 4){
-     return  Math.atan2(ey - sy, ex - sx) * 180 / Math.PI;
-      }
-      else{
-       let deg =  Math.atan2(ey - sy, ex - sx) * 180 / Math.PI;
-       deg = 90 - (deg - 90);
-        return deg;
-      }
+    if(valueX == 4){
+      return  Math.atan2(ey - sy, ex - sx) * 180 / Math.PI;
+    } else {
+      let deg =  Math.atan2(ey - sy, ex - sx) * 180 / Math.PI;
+      deg = 90 - (deg - 90);
+      return deg;
     }
+  }
 
   // 최초의 Degree를 제외한 Degree를 temp에 넣기.
   if(!middleDegree){  
     middleDegree = parseInt(angleDeg(eary,shoy,earx,shox));
+  } else {
+    tempDegree = parseInt(angleDeg(eary,shoy,earx,shox));
   }
-    else{
-      tempDegree = parseInt(angleDeg(eary,shoy,earx,shox));
-   }
   
-
   return angleDeg(eary,shoy,earx,shox);  
-  }
+}
