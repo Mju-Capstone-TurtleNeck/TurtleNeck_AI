@@ -4,8 +4,12 @@ const boundingBoxColor = 'red';
 const lineWidth = 2;
 const scoreCount = 13;
 var direction = 4;
+var degFlag;
+// let faceapi;
+var semiTurtle = 73;
+var highTurtle = 60;
 
-
+var count;
 function toTuple({ y, x }) {
     return [y, x];
 }
@@ -24,10 +28,6 @@ function keyDrawPoint(ctx, y, x, r, color) {
     ctx.fill();
 }
 
-
-/**
- * Draws a line on a canvas, i.e. a joint
- */
 function drawSegment([ay, ax], [by, bx], color, scale, ctx) {
     ctx.beginPath();
     ctx.moveTo(ax * scale, ay * scale);
@@ -37,43 +37,35 @@ function drawSegment([ay, ax], [by, bx], color, scale, ctx) {
     ctx.stroke();
 }
 
-/**
- * Draws a pose skeleton by looking up all adjacent keypoints/joints
- */
-function drawSkeleton(keypoints, minConfidence, ctx, scale = 1) {
-    const adjacentKeyPoints =
-        posenet.getAdjacentKeyPoints(keypoints, minConfidence);
-
-    adjacentKeyPoints.forEach((keypoints) => {
-        drawSegment(
-            toTuple(keypoints[0].position), toTuple(keypoints[1].position), color,
-            scale, ctx);
-    });
-}
-
-/**
- * Draw pose keypoints onto a canvas
- */
-function drawKeypoints(keypoints, minConfidence, ctx, scale = 1) {
+ function drawKeypoints(keypoints, minConfidence, ctx, scale = 1) {
+    // let degree = turtleModel(keypoints);
+    count = 0;
+    // 측면에 대한 포인트를 3개 이상 잡지 못하면 콘솔출력
+    for (let i = 0; i < 7; i++) {
+       if (count == 3){
+           console.log("Cannot Read Image");
+           return 0;
+       } 
+        else if (keypoints[i].score < 0.2) {
+          count ++;
+        }
+    }
     let degree = turtleModel(keypoints);
-    
-    if (!degree) {
-        console.log("Cannot Read Image!!");
-        return 0;
+
+    if(degree < highTurtle){
+        console.log("Score :" + parseInt(degree)  + "  You are Not Turtle");
     }
-    else if(degree < minConfidence){
-        console.log("You are Turtle!! \n" + " Your Turtle Degree : " + parseInt(degree));
+    // between 73 and 60 degree
+    else if (degree < semiTurtle){
+        console.log("Score :" + parseInt(degree)  + "  You are SemiTurtle");
     }
-    else{
-        console.log("Congratulations!!!  You are not a turtle!!\n" + "Your Turtle Degree :" + parseInt(degree))
+    // 73 degree upper
+    else {
+        console.log("Score :" + parseInt(degree) + "  You are Not Turtle");
     }
-    
+
     for (let i = 0; i < keypoints.length; i++) {
         const keypoint = keypoints[i];
-        // if (keypoint.score < minConfidence) {
-        //     continue;
-        // }
-
         const { y, x } = keypoint.position;
 
         if(direction == 4 && i == 4 || direction == 4 && i == 6)  {
@@ -87,34 +79,11 @@ function drawKeypoints(keypoints, minConfidence, ctx, scale = 1) {
         }
     }
 }
-
-/**
- * Draw the bounding box of a pose. For example, for a whole person standing
- * in an image, the bounding box will begin at the nose and extend to one of
- * ankles
- */
-function drawBoundingBox(keypoints, ctx) {
-    const boundingBox = posenet.getBoundingBox(keypoints);
-
-    ctx.rect(
-        boundingBox.minX, boundingBox.minY, boundingBox.maxX - boundingBox.minX,
-        boundingBox.maxY - boundingBox.minY);
-
-    ctx.strokeStyle = boundingBoxColor;
-    ctx.stroke();
-}
-
-function turtleModel(keypoints){
+ function turtleModel(keypoints){
    
-    var count = 0;
     var valueX = 0;
     var valueY = 0;
 
-    for (let i = 0; i < keypoints.length; i++) {
-        if (keypoints[i].score < 0.5) count++;
-        if (count > scoreCount) return 0;
-    }
-     
     if(keypoints[4].score > keypoints[3].score){
         direction = 4;
         valueX = 4;
